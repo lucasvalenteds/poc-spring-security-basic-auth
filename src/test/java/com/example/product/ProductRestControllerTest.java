@@ -33,7 +33,7 @@ class ProductRestControllerTest {
     private WebTestClient webTestClient;
 
     @Test
-    @WithSecurityUser(username = "julia.adams")
+    @WithSecurityUser(username = "julia.adams", authorities = "USER")
     void findingProductsFromCustomer() {
         mockRepositoryToFindProducts(createProducts("Banana", "Apple", "Pineapple"));
 

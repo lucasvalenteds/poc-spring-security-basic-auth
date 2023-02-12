@@ -20,6 +20,7 @@ public class SecurityConfiguration {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(registry -> registry
                         .requestMatchers("/actuator/**").hasAnyAuthority("ADMIN")
+                        .requestMatchers("/products/**").hasAnyAuthority("USER")
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
