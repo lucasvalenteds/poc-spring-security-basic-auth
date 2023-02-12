@@ -5,6 +5,8 @@ import com.example.testing.StringIsInstantMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -75,6 +77,38 @@ class ApplicationTest {
                 .jsonPath("$.status").value(Matchers.equalTo(HttpStatus.FORBIDDEN.value()))
                 .jsonPath("$.error").value(Matchers.equalTo("Forbidden"))
                 .jsonPath("$.path").value(Matchers.equalTo("/products"));
+    }
+
+    @Test
+    void adminsCanAccessActuatorHealth() {
+        final var credentials = Base64.getEncoder()
+                .encodeToString("john.smith:s3cr3t".getBytes());
+
+        webTestClient.get()
+                .uri("/actuator/health")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").value(Matchers.equalTo("UP"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"mary.jane:p4ssw0rd", "guest:guest"})
+    void usersAndGuestsCannotAccessActuatorHealth(String plainTextCredentials) {
+        final var credentials = Base64.getEncoder()
+                .encodeToString(plainTextCredentials.getBytes());
+
+        webTestClient.get()
+                .uri("/actuator/health")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials)
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("$.timestamp").value(equalToStringConvertibleToInstant())
+                .jsonPath("$.status").value(Matchers.equalTo(HttpStatus.FORBIDDEN.value()))
+                .jsonPath("$.error").value(Matchers.equalTo("Forbidden"))
+                .jsonPath("$.path").value(Matchers.equalTo("/actuator/health"));
     }
 
     private static Matcher<String> equalToStringConvertibleToInstant() {
